@@ -68,17 +68,20 @@ const getContentSecurityPolicy = config => {
     styleSrc: ["'self'"],
     imgSrc: ["'self'"],
     fontSrc: ["'self'", 'data:'],
-    scriptSrc: ["'self'", "'unsafe-inline'"]
+    scriptSrc: ["'self'", "'unsafe-inline'"],
+    connectSrc: ["'none'"]
     /* eslint-enable quotes */
   };
 
   let gaDirectives = {
     scriptSrc: 'www.google-analytics.com',
-    imgSrc: 'www.google-analytics.com'
+    imgSrc: 'www.google-analytics.com',
+    connectSrc: 'www.google-analytics.com'
   };
 
   if (config.gaTagId) {
     directives.scriptSrc = directives.scriptSrc.concat(gaDirectives.scriptSrc);
+    directives.connectSrc = directives.connectSrc.concat(gaDirectives.connectSrc);
     directives.imgSrc = directives.imgSrc.concat(gaDirectives.imgSrc);
   }
 
