@@ -5,6 +5,12 @@ module.exports = {
   name: 'test-journey',
   baseUrl: '/test',
   steps: {
-    '/fir': {}
+    '/first': {
+      'fields': ['email'],
+      'next': '/second'
+    },
+    '/second': {
+
+    }
   }
 };

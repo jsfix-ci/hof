@@ -1,1 +1,6 @@
-{}
+{
+  "email": {
+    "required": "enter an email",
+    "email": "write a valid email"
+  }
+}

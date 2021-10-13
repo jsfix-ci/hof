@@ -1,1 +1,5 @@
-{}
+{
+  "email": {
+    "label": "Enter email"
+  }
+}

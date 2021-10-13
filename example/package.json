@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
+    "debug": "node --inspect server.js",
     "start:dev": "HOF_EXAMPLE_APP=true ../bin/hof-build watch",
     "build": "HOF_EXAMPLE_APP=true ../bin/hof-build",
     "postinstall": "yarn run build"
