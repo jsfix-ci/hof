@@ -21,6 +21,7 @@ const logger = require('./lib/logger');
 const helmet = require('helmet');
 const _ = require('lodash');
 const deprecate = require('deprecate');
+const wizard = require('./wizard');
 
 const customConfig = {};
 
@@ -47,6 +48,20 @@ const loadRoutes = (app, config) => {
     });
     app.use(route.baseUrl || '/', router(routeConfig));
   });
+  const steps = {
+    '/first': {
+      'fields': ['email'],
+        'next': '/second'
+    },
+    '/second': {
+    }
+  };
+  const fields = {
+    email: {
+      validate: ['required', 'email'], labelClassName: 'visuallyhidden'
+    }
+  };
+  app.use('/hack', wizard(steps, fields, {}));
 };
 
 const applyErrorMiddlewares = (app, config) => {
@@ -228,6 +243,25 @@ function bootstrap(options) {
   app.use(userMiddleware);
   app.use(hofMiddleware.cookies(config));
   loadRoutes(app, config);
+
+  app.use(express.json());
+  app.post('/addJourney', (req, res) => {
+    console.log(req.body.name);
+    console.log(req.body.steps);
+    console.log(req.body.fields);
+    app.use(req.body.name, wizard(req.body.steps, req.body.fields, {}));
+
+  });
+
+  let dynamicApiRouter = null;
+  export function setupDynamicRouter(config) {
+    dynamicApiRouter = new express.Router();
+    // Add routes to dynamicApiRouter from `config`
+    dynamicApiRouter[config.method](config.path, config.handler)
+  }
+
+  app.use('/api', (req, res, next) => dynamicApiRouter(req, res, next));
+
   applyErrorMiddlewares(app, config);
 
   const instance = {
