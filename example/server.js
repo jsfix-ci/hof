@@ -6,6 +6,7 @@ const bootstrap = require('../');
 bootstrap({
   translations: './apps/example-app/translations',
   routes: [
-    require('./apps/example-app')
+    require('./apps/example-app'),
+    require('./apps/test-journey')
   ]
 });
