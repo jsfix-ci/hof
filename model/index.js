@@ -2,7 +2,6 @@
 'use strict';
 
 const _ = require('lodash');
-const request = require('request');
 const url = require('url');
 const EventEmitter = require('events').EventEmitter;
 
@@ -27,7 +26,6 @@ module.exports = class Model extends EventEmitter {
     this.set(attributes, {
       silent: true
     });
-    this._request = request;
   }
 
   save(options, callback) {
@@ -85,8 +83,22 @@ module.exports = class Model extends EventEmitter {
       headers: options.headers || reqConf.headers || this.options.headers
     });
   }
-
+  
   request(originalSettings, body, callback) {
+
+    async function fetchRequest(settings, callback) {
+      //Fetch doesn't like undefined headers
+      settings.headers = settings.headers || [];
+      var response = await fetch(settings.uri, settings);
+      var responseText = await response.text();
+      var responseObj = { status: response.status, statusCode: response.status, statusText: response.statusText, body: responseText };
+      if(response.ok) {
+        callback(null,responseObj);
+      } else {
+        callback({ status: response.status, code: response.status, message: response.statusText },responseObj);  
+      }
+    }
+
     if (typeof body === 'function' && arguments.length === 2) {
       callback = body;
       body = undefined;
@@ -137,13 +149,13 @@ module.exports = class Model extends EventEmitter {
             }
           };
 
-          this._request(settings, (err, response) => {
+          fetchRequest(settings, (err, response) => {
             if (err) {
-              if (err.code === 'ETIMEDOUT' || err.code === 'ESOCKETTIMEDOUT') {
+              if (err.status === 408) {
                 err.message = 'Connection timed out';
                 err.status = 504;
               }
-              err.status = err.status || (response && response.statusCode) || 503;
+              err.status = err.status || (response && response.status) || 503;
               return _callback(err, null, err.status);
             }
             return this.handleResponse(response, (error, data, status) => {
