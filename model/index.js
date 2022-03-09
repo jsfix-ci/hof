@@ -16,6 +16,59 @@ function timeDiff(from, to, d) {
   return +ms.toFixed(digits);
 }
 
+/*
+async function fetchRequest(settings, callback) {
+  //Fetch doesn't like undefined headers
+  settings.headers = settings.headers || [];
+  var response = await fetch(settings.uri, settings);
+  var responseText = await response.text();
+  var responseObj = { status: response.status, statusCode: response.status, statusText: response.statusText, body: responseText };
+  if(response.ok) {
+    callback(null,responseObj);
+  } else {
+    callback({ status: response.status, code: response.status, message: response.statusText },responseObj);  
+  }
+}
+*/
+
+/*
+function fetchRequest(settings, callback) {
+  //Fetch doesn't like undefined headers
+  settings.headers = settings.headers || [];
+  settings.uri = settings.uri || settings.url || url.format(settings);
+  fetch(settings.uri, settings).then(async function(response) {
+    var responseText = await response.text();
+    var responseObj = { status: response.status, statusCode: response.status, statusText: response.statusText, body: responseText };
+    if(response.ok) {
+      callback(null,responseObj);
+    } else {
+      callback({ status: response.status, code: response.status, message: response.statusText },responseObj);  
+      //callback({ status: response.status, code: response.status, message: response.statusText },responseObj);  
+    }
+    //return { status: response.status, statusCode: response.status, statusText: response.statusText, body: responseText };
+  })
+*/
+
+function fetchRequest(settings, callback) {
+  //Fetch doesn't like undefined headers
+  settings.headers = settings.headers || [];
+  settings.uri = settings.uri || settings.url || url.format(settings);
+  let response;
+  console.log(settings);
+  fetch(settings.uri, settings).then((gottenResponse) => {
+    response = gottenResponse;
+  })
+  .then(() => response.text())
+  .then((responseText) => {
+    var result = { status: response.status, statusCode: response.status, statusText: response.statusText, body: responseText };
+    if(response.ok) {
+      callback(null,result);
+    } else {
+      callback({ status: response.status, code: response.status, message: response.statusText }, result);  
+    }
+  });
+}
+
 const urlKeys = Object.keys(url.parse(''));
 
 module.exports = class Model extends EventEmitter {
@@ -26,6 +79,7 @@ module.exports = class Model extends EventEmitter {
     this.set(attributes, {
       silent: true
     });
+    this._request = fetchRequest;
   }
 
   save(options, callback) {
@@ -85,7 +139,7 @@ module.exports = class Model extends EventEmitter {
   }
   
   request(originalSettings, body, callback) {
-
+    /*
     async function fetchRequest(settings, callback) {
       //Fetch doesn't like undefined headers
       settings.headers = settings.headers || [];
@@ -98,6 +152,7 @@ module.exports = class Model extends EventEmitter {
         callback({ status: response.status, code: response.status, message: response.statusText },responseObj);  
       }
     }
+    */
 
     if (typeof body === 'function' && arguments.length === 2) {
       callback = body;
