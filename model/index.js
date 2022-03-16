@@ -2,8 +2,10 @@
 'use strict';
 
 const _ = require('lodash');
+const requestJS = require('request');
 const url = require('url');
 const EventEmitter = require('events').EventEmitter;
+const _ = require('lodash');
 
 const REFERENCE = /^\$ref:/;
 
@@ -16,57 +18,34 @@ function timeDiff(from, to, d) {
   return +ms.toFixed(digits);
 }
 
-/*
-async function fetchRequest(settings, callback) {
-  //Fetch doesn't like undefined headers
-  settings.headers = settings.headers || [];
-  var response = await fetch(settings.uri, settings);
-  var responseText = await response.text();
-  var responseObj = { status: response.status, statusCode: response.status, statusText: response.statusText, body: responseText };
-  if(response.ok) {
-    callback(null,responseObj);
+function fetchRequest(settings, callback) {
+  if(settings.isUpload || _.get(settings,'formData.document.options.filename')) 
+  {
+    //We're currently continuing to use requestJS for uploads as the Node Fetch API doesn't work with Multer
+    //TODO: Remove this once Fetch is compatible with Multer
+    //We can either pass in the isUpload flag or we'll assume it's an upload since we've passed a document with options and a filename
+    requestJS(settings, (err, response) => {
+      callback(err,response);
+    });
   } else {
-    callback({ status: response.status, code: response.status, message: response.statusText },responseObj);  
+    //Fetch doesn't like undefined headers
+    settings.headers = settings.headers || [];
+    settings.uri = settings.uri || settings.url || url.format(settings);
+    let response;
+    console.log(settings);
+    fetch(settings.uri, settings).then((_response) => {
+      response = _response;
+    })
+    .then(() => response.text())
+    .then((responseText) => {
+      var result = { status: response.status, statusCode: response.status, statusText: response.statusText, body: responseText };
+      if(response.ok) {
+        callback(null,result);
+      } else {
+        callback({ status: response.status, code: response.status, message: response.statusText }, result);  
+      }
+    });
   }
-}
-*/
-
-/*
-function fetchRequest(settings, callback) {
-  //Fetch doesn't like undefined headers
-  settings.headers = settings.headers || [];
-  settings.uri = settings.uri || settings.url || url.format(settings);
-  fetch(settings.uri, settings).then(async function(response) {
-    var responseText = await response.text();
-    var responseObj = { status: response.status, statusCode: response.status, statusText: response.statusText, body: responseText };
-    if(response.ok) {
-      callback(null,responseObj);
-    } else {
-      callback({ status: response.status, code: response.status, message: response.statusText },responseObj);  
-      //callback({ status: response.status, code: response.status, message: response.statusText },responseObj);  
-    }
-    //return { status: response.status, statusCode: response.status, statusText: response.statusText, body: responseText };
-  })
-*/
-
-function fetchRequest(settings, callback) {
-  //Fetch doesn't like undefined headers
-  settings.headers = settings.headers || [];
-  settings.uri = settings.uri || settings.url || url.format(settings);
-  let response;
-  console.log(settings);
-  fetch(settings.uri, settings).then((gottenResponse) => {
-    response = gottenResponse;
-  })
-  .then(() => response.text())
-  .then((responseText) => {
-    var result = { status: response.status, statusCode: response.status, statusText: response.statusText, body: responseText };
-    if(response.ok) {
-      callback(null,result);
-    } else {
-      callback({ status: response.status, code: response.status, message: response.statusText }, result);  
-    }
-  });
 }
 
 const urlKeys = Object.keys(url.parse(''));
@@ -139,21 +118,6 @@ module.exports = class Model extends EventEmitter {
   }
   
   request(originalSettings, body, callback) {
-    /*
-    async function fetchRequest(settings, callback) {
-      //Fetch doesn't like undefined headers
-      settings.headers = settings.headers || [];
-      var response = await fetch(settings.uri, settings);
-      var responseText = await response.text();
-      var responseObj = { status: response.status, statusCode: response.status, statusText: response.statusText, body: responseText };
-      if(response.ok) {
-        callback(null,responseObj);
-      } else {
-        callback({ status: response.status, code: response.status, message: response.statusText },responseObj);  
-      }
-    }
-    */
-
     if (typeof body === 'function' && arguments.length === 2) {
       callback = body;
       body = undefined;
@@ -206,11 +170,11 @@ module.exports = class Model extends EventEmitter {
 
           fetchRequest(settings, (err, response) => {
             if (err) {
-              if (err.status === 408) {
+              if (err.status === 408 || err.code === 'ETIMEDOUT' || err.code === 'ESOCKETTIMEDOUT') {
                 err.message = 'Connection timed out';
                 err.status = 504;
               }
-              err.status = err.status || (response && response.status) || 503;
+              err.status = err.status || err.statusCode || (response && response.status) || 503;
               return _callback(err, null, err.status);
             }
             return this.handleResponse(response, (error, data, status) => {
