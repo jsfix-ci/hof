@@ -9,9 +9,16 @@ const mix = require('mixwith').mix;
 
 const IncludedBehaviours = require('./behaviours');
 const Prometheus = require('prom-client');
-const metricsInterval = Prometheus.collectDefaultMetrics();
+
+const httpRequestDurationMicroseconds = new Prometheus.Histogram({
+   name: 'http_request_duration_ms',
+   help: 'Duration of HTTP requests in ms',
+   labelNames: ['method', 'route', 'code'],
+   buckets: [0.10, 5, 15, 50, 100, 200, 300, 400, 500]  // buckets for response time from 0.1ms to 500ms
+ });
 
 let count = 0;
+
 
 const getController = (SuperClass, behavs) => {
   let behaviours = behavs ? _.castArray(behavs) : [];
@@ -35,6 +42,10 @@ const Wizard = (steps, fields, setts) => {
     controller: FormController
   }, setts || {});
 
+  const metricsInterval = Prometheus.collectDefaultMetrics({
+    labels: { FORM: process.title.toUpperCase()}
+  });
+
   // prevent potentially conflicting session namespaces
   if (!settings.name) {
     settings.name = count;
@@ -48,9 +59,10 @@ const Wizard = (steps, fields, setts) => {
 
   app.use(require('./middleware/session'));
 
-  app.get('/metrics', (req,res)=>{
+  app.get('/metrics', async (req,res)=>{
     res.set('Content-Type',Prometheus.register.contentType);
-    res.end(Prometheus.register.metrics());
+    const out = await Prometheus.register.metrics();
+    res.send(out);
   });
 
   let first;
@@ -108,11 +120,19 @@ const Wizard = (steps, fields, setts) => {
       controller.use(require('./middleware/csrf')(route, controller, steps, first));
     }
 
+    let responseTimeInMs = 0;
+
     app.route(route + settings.params)
       .all((req, res, next) => {
-        if (settings.translate) {
-          req.translate = settings.translate;
-        }
+        const startTime = Date.now();
+        httpRequestDurationMicroseconds
+          .labels(req.method, req.url, res.statusCode)
+          .observe(responseTimeInMs);
+            if (settings.translate) {
+              req.translate = settings.translate;
+            }
+            const endTime = Date.now();
+             responseTimeInMs = endTime - startTime;
         next();
       })
       .all(require('./middleware/session-model')(settings))
