@@ -8,6 +8,8 @@ const FormController = require('../controller');
 const mix = require('mixwith').mix;
 
 const IncludedBehaviours = require('./behaviours');
+const Prometheus = require('prom-client');
+const metricsInterval = Prometheus.collectDefaultMetrics();
 
 let count = 0;
 
@@ -45,6 +47,11 @@ const Wizard = (steps, fields, setts) => {
   const app = express.Router();
 
   app.use(require('./middleware/session'));
+
+  app.get('/metrics', (req,res)=>{
+    res.set('Content-Type',Prometheus.register.contentType);
+    res.end(Prometheus.register.metrics());
+  });
 
   let first;
 
