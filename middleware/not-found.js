@@ -1,4 +1,5 @@
 'use strict';
+const monitor = require('./monitor');
 
 const getTranslations = translate => {
   const translations = {
@@ -25,6 +26,8 @@ module.exports = options => {
     if (logger && logger.warn) {
       logger.warn(`Cannot find: ${req.url}`);
     }
+
+    monitor(req, res, '404');
 
     res.status(404).render('404', {
       title: translations.title,

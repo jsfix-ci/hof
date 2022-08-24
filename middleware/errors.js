@@ -2,6 +2,7 @@
 'use strict';
 
 const rateLimitsConfig = require('../config/rate-limits');
+const monitor = require('./monitor');
 
 const errorTitle = code => `${code}_ERROR`;
 const errorMsg = code => `There is a ${code}_ERROR`;
@@ -88,6 +89,8 @@ module.exports = options => {
       startLink: returnBaseUrl(req.path),
       baseUrl: returnBaseUrl(req.path)
     };
+
+    monitor(req, res, err.status);
 
     if (logger && logger.error) {
       logger.error(err.message || err.error, err);
