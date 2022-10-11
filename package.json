@@ -1,7 +1,7 @@
 {
   "name": "hof",
   "description": "A bootstrap for HOF projects",
-  "version": "20.0.0-beta.32",
+  "version": "20.1.2",
   "license": "MIT",
   "main": "index.js",
   "author": "HomeOffice",
@@ -72,7 +72,7 @@
     "minimatch": "^3.0.3",
     "minimist": "^1.2.6",
     "mixwith": "^0.1.1",
-    "moment": "^2.29.2",
+    "moment": "^2.29.4",
     "morgan": "^1.10.0",
     "mustache": "^2.3.0",
     "nodemailer": "^6.6.3",
@@ -89,6 +89,7 @@
     "uglify-js": "^3.14.3",
     "underscore": "^1.12.1",
     "urijs": "^1.19.11",
+    "uuid": "^8.3.2",
     "winston": "^3.7.2"
   },
   "devDependencies": {

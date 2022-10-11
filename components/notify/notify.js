@@ -1,6 +1,6 @@
 'use strict';
 const NotifyClient = require('notifications-node-client').NotifyClient;
-const {v4: uuidv4} = require('uuid');
+const { v4: uuidv4 } = require('uuid');
 
 module.exports = class Notify {
   constructor(opts) {
